@@ -3,12 +3,15 @@ package com.zte.vmax.rdk.jsr.excel;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 /**
  * Created by 10033559 on 2017/7/26.
  */
+
 public class CellFormat {
 
     private StyleFormat style;
@@ -33,7 +36,9 @@ public class CellFormat {
 
     public static String convertCell2StringValue(Cell cell){
         switch(cell.getCellTypeEnum()) {
-            case NUMERIC: return String.valueOf(cell.getNumericCellValue());
+            case NUMERIC: return HSSFDateUtil.isCellDateFormatted(cell) ?
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(cell.getDateCellValue()).toString() :
+                    String.valueOf(cell.getNumericCellValue());
             case STRING:  return cell.getStringCellValue();
             case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
             case FORMULA: return String.valueOf(cell.getCellFormula());
@@ -52,7 +57,10 @@ public class CellFormat {
 
     @Override
     public boolean equals(Object obj){
-        CellFormat that = (CellFormat) obj;
+        CellFormat that = null;
+        if (obj instanceof CellFormat) {
+            that = (CellFormat) obj;
+        }
         return that != null && Util.isEquals(this.style, that.style)  &&  Util.isEquals(this.detail, that.detail);
     }
 
@@ -91,7 +99,10 @@ public class CellFormat {
 
         @Override
         public boolean equals(Object obj){
-            FontFormat that = (FontFormat) obj;
+            FontFormat that = null;
+            if (obj instanceof FontFormat) {
+                that = (FontFormat) obj;
+            }
             return that != null && Util.isEquals(this.fontFamily, that.fontFamily) && this.fontSize == that.fontSize &&
                     this.fontColor == that.fontColor && this.fontWeight == that.fontWeight;
         }
@@ -127,7 +138,10 @@ public class CellFormat {
 
         @Override
         public boolean equals(Object obj){
-            StyleFormat that = (StyleFormat) obj;
+            StyleFormat that = null;
+            if (obj instanceof StyleFormat) {
+                that = (StyleFormat) obj;
+            }
             return that != null && this.backgroundColor == that.backgroundColor &&
                     Util.isEquals(this.textAlign, that.textAlign) && Util.isEquals(this.fontFormat, that.fontFormat);
         }
@@ -140,6 +154,7 @@ public class CellFormat {
 
     public static class FormatDetail{
         public static final String DEFAULT_NUMBER_DETAIL = "0.0000000000";
+        public static final String DEFAULT_STRING_DETAIL = "";
         public static final String STRING_FORMAT = "string";
         public static final String NUMBERIC_FORMAT = "number";
 
@@ -152,12 +167,15 @@ public class CellFormat {
 
         public String getType() { return type; }
         public String getDetail() {
-            return detail == null || detail.length() == 0 ? DEFAULT_NUMBER_DETAIL : detail;
+            return detail == null || detail.length() == 0 ?( NUMBERIC_FORMAT.equals(type) ? DEFAULT_NUMBER_DETAIL : null) : detail;
         }
 
         @Override
         public boolean equals(Object obj){
-            FormatDetail that = (FormatDetail) obj;
+            FormatDetail that = null;
+            if (obj instanceof FormatDetail) {
+                that = (FormatDetail) obj;
+            }
             return that!= null && Util.isEquals(this.type, that.type) && Util.isEquals(this.detail, that.detail);
         }
 

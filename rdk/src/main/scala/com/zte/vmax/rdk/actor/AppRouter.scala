@@ -6,13 +6,13 @@ import com.zte.vmax.rdk.actor.Messages.{ExportParam, UploadServiceParam, WSCallJ
 import com.zte.vmax.rdk.defaults.Misc
 import com.zte.vmax.rdk.util.Logger
 
-/**
+ /*
   * Created by 10054860 on 2016/7/7.
   */
 class AppRouter extends Actor with Logger {
   val httpRouter = context.actorOf(FromConfig.props(Props[WorkRoutee].
     withDispatcher(Misc.routeDispatcher).
-    withMailbox("akka.actor.boundedmailbox")), Misc.router)
+    withMailbox("akka.actor.boundedmailbox")), Misc.router)// actor pool
   var msgNO = 0L
 
   def receive = {
@@ -23,7 +23,7 @@ class AppRouter extends Actor with Logger {
       printLog(msg)
       httpRouter.forward(msg)
     case msg: UploadServiceParam =>
-      printLog(msg.fileName)
+      printLog("processing file uploading")
       httpRouter.forward((msgNO, msg))
     case msg: ExportParam =>
       printLog(msg)

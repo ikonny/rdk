@@ -7,7 +7,7 @@ import com.zte.vmax.activemq.rdk.{RDKMessage}
 import com.zte.vmax.rdk.actor.Messages.RDKTopicMessageNotify
 import com.zte.vmax.rdk.util.Logger
 
-/**
+ /*
   * Created by 10054860 on 2016/7/12.
   */
 class MQMessageListener(actorRef: ActorRef, topic: String) extends Logger with MessageListener {
@@ -16,7 +16,7 @@ class MQMessageListener(actorRef: ActorRef, topic: String) extends Logger with M
       case msg: RDKMessage =>
         logger.info(s"onMessage: topic=${topic},msg=${msg.toString}")
         actorRef ! RDKTopicMessageNotify(topic, msg)
-      case x:Any =>
+      case x: Any =>
         logger.info(s"receive Unknown message ${x}")
     }
   }

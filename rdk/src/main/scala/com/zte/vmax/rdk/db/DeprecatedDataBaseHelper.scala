@@ -8,7 +8,7 @@ import com.zte.vmax.rdk.proxy.{DeprecatedDBAccessTrait, ProxyManager}
 import com.zte.vmax.rdk.util.{Logger, RdkUtil}
 
 
-/**
+ /*
  * Created by 10054860 on 2016/8/19.
  */
 //@deprecated("DO NOT USE IT", "2.1")

@@ -2,7 +2,7 @@ package com.zte.vmax.rdk.util
 
 import scala.sys.process._
 
-/**
+ /*
  * Created by 10184092 on 2016/12/29.
  */
 object ShellExecutor extends Logger{
@@ -27,14 +27,14 @@ object ShellExecutor extends Logger{
     }
   }
 
-  /**
+   /*
    * 执行命令行，获取返回值
    * @param cmd 命令字符串，如 “ls -al” 或者 命令Seq，如Seq("ls", "-a", "-l")
    * @return
    */
   def getReturnCode(cmd: ProcessBuilder): Either[Int, String] = _getExitCode(cmd)
 
-  /**
+   /*
    * 执行命令行，获取返回值
    * @param cmd 命令字符串，如 “ls -al” 或者 命令Seq，如Seq("ls", "-a", "-l")
    * @return

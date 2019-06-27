@@ -10,7 +10,7 @@ import akka.actor.Actor
 import com.zte.vmax.rdk.actor.Messages.AgingValue
 import scala.concurrent.duration._
 
-/**
+ /*
  * Created by 10184092 on 2016/11/18.
  */
 object AgingCache extends Logger {

@@ -16,12 +16,12 @@ define(['angular', 'rd.core', 'jquery', 'rd.controls.Module', 'rd.services.Popup
           $('.rdk_menu').parents('.ui-dialog').css({'overflow': 'visible'});
 
           subMenu.css({
-            'left': tWidth+2,
+            'left': tWidth,
           }).show();
           //x方向进行边界检测
           if(Utils.offsetCheckX(subMenu[0])){
             subMenu.css({
-              'left': -(tWidth+2),
+              'left': -tWidth,
             })
           }
         }
@@ -160,8 +160,8 @@ define(['angular', 'rd.core', 'jquery', 'rd.controls.Module', 'rd.services.Popup
         var wOffx = 0, wOffy = 0, bodyWidth = $(window).width(), bodyHeight = $(window).height();
         if (pos === 'mouse') {
           pos = {
-            x: event.pageX,
-            y: event.pageY
+            x: event.pageX || event.clientX,
+            y: event.pageY || event.clientY
           };
         } else if (typeof pos === 'object' && pos.relateTo) {
           var dom = $('#' + pos.relateTo)

@@ -1,11 +1,11 @@
 package com.zte.vmax.rdk.db
 
-/**
+ /*
   * Created by 10054860 on 2016/9/20.
   */
 object Defines {
 
-  /**
+   /*
     * @param maxWait                获取连接最大等待时长（ms）
     * @param initialSize            数据库初始化时，创建的连接个数
     * @param maxActive              最大活跃连接数
@@ -18,7 +18,7 @@ object Defines {
     */
   case class DbPoolInfo(maxWait: Int, initialSize: Int, maxActive: Int, minIdle: Int, maxIdle: Int,
                         minEvictableIdleTime: Int, testOnBorow: Boolean, removeAbandoned: Boolean,
-                        removeAbandonedTimeout: Int,validationQuery:String) {
+                        removeAbandonedTimeout: Int, validationQuery: String) {
 
     override def toString: String = {
       s"DbPoolInfo(maxWait: $maxWait, initialSize: $initialSize, " +
@@ -30,7 +30,7 @@ object Defines {
   }
 
 
-  /**
+   /*
     *
     * @param name   数据源名称
     * @param driver 驱动
@@ -38,7 +38,7 @@ object Defines {
     */
   case class DatabaseInfo(name: String, driver: String, url: String, poolRef: String)
 
-  /**
+   /*
     * 数据源主键
     * @param driver  驱动
     * @param url      jdbc url

@@ -3,6 +3,8 @@ package com.zte.vmax.rdk.env
 import java.util
 import javax.script._
 
+import com.zte.vmax.rdk.Async.AsyncHelper
+import com.zte.vmax.rdk.Async.AsyncTaskMessages.RemoteToken
 import com.google.gson.GsonBuilder
 import com.zte.vmax.rdk.actor.Messages.{DBSession, WSBroadcast}
 import com.zte.vmax.rdk.actor.WebSocketServer
@@ -13,28 +15,28 @@ import com.zte.vmax.rdk.jsr._
 import com.zte.vmax.rdk.mq.MqHelper
 import com.zte.vmax.rdk.proxy.ProxyManager
 import com.zte.vmax.rdk.util.{Logger, RdkUtil}
-import jdk.nashorn.api.scripting.ScriptObjectMirror
 import com.zte.vmax.rdk.actor.Messages._
 import com.zte.vmax.rdk.db.DataBaseHelper.DBError
+import jdk.nashorn.api.scripting.ScriptObjectMirror
+import jdk.nashorn.internal.runtime.Undefined
 import spray.http.HttpHeaders.RawHeader
 import spray.http.MediaTypes
 import spray.http.MediaType
 
-/**
+import scala.collection.mutable.ArrayBuffer
+
+ /*
   * Created by 10054860 on 2016/7/11.
   */
+
 class Runtime(engine: ScriptEngine) extends Logger {
   def jsLogger = appLogger
 
-  var serviceCaller: ScriptObjectMirror = null
-  private var jsonParser: ScriptObjectMirror = null
-
+  var serviceCaller: ScriptObjectMirror = _
+  var createJavascriptObject: ScriptObjectMirror = _
+  private var jsonParser: ScriptObjectMirror = _
 
   implicit var application: String = ""
-  val locale: String = Config.get(Config.get("extension.locale.key")) match {
-    case "" => "zh_CN"
-    case x => x
-  }
 
   val fileHelper = new FileHelper
 
@@ -45,7 +47,7 @@ class Runtime(engine: ScriptEngine) extends Logger {
   var context: Option[RDKContext] = None
 
   def setContext(context: RDKContext): Unit = {
-    if (context != NoneContext) {
+    if (context != NoneContext && context != null) {
       this.restHelper.setOriginHeader(getCurrentReqCtxHeaderArray(context).toIterator)
       this.context = Option(context)
     }
@@ -116,13 +118,16 @@ class Runtime(engine: ScriptEngine) extends Logger {
     }
     try {
       serviceCaller = eval("_callService")
+      createJavascriptObject = eval("_createJavascriptObject")
       jsonParser = eval("json")
     }
     catch {
       case e: ScriptException => {
-        logger.error("internal error! no '_callService()/json()' defined!")
+        logger.error("internal error! no '_callService()/json()/createJavascriptObject()' defined!")
       }
     }
+
+    DataBaseHelper.createJavascriptObject = createJavascriptObject
   }
 
   @throws(classOf[ScriptException])
@@ -167,7 +172,11 @@ class Runtime(engine: ScriptEngine) extends Logger {
     else ServiceRawResult(jsonParser.call(callable, result, "").toString, ct, headers.toList)
   }
 
-  /**
+  def locale(): String = {
+    Config.get("other.locale")
+  }
+
+   /*
     * 缓冲数据功能实现区，线程安全在js中控制了，这里不需要控制
     */
 
@@ -206,7 +215,7 @@ class Runtime(engine: ScriptEngine) extends Logger {
 
   def agingCacheDel(key: String) = AgingCache.remove(key)
 
-  /**
+   /*
     * 数据库数据获取处理
     */
 
@@ -225,81 +234,73 @@ class Runtime(engine: ScriptEngine) extends Logger {
 
   }
 
-  def fetch(sql: String, maxLine: Int): String = {
-    var data: Option[AnyRef] = None
+  def fetch(sql: String, maxLine: Int): ScriptObjectMirror = {
     if (cacheGet("#_#allowNullToString#_#").asInstanceOf[Boolean]) {
-      data = DataBaseHelper.fetch(useDbSession, sql, maxLine, null)
+      DataBaseHelper.fetchV2(useDbSession, sql, maxLine, null)
     } else {
-      data = DataBaseHelper.fetch(useDbSession, sql, maxLine)
+      DataBaseHelper.fetchV2(useDbSession, sql, maxLine, "null")
     }
-    objectToJson(data getOrElse "null") //转json？
   }
 
-  def fetchWithDataSource(dataSource: String, sql: String, maxLine: Int): String = {
-    var data: Option[AnyRef] = None
+  def fetchWithDataSource(dataSource: String, sql: String, maxLine: Int): ScriptObjectMirror = {
     if (cacheGet("#_#allowNullToString#_#").asInstanceOf[Boolean]) {
-      data = DataBaseHelper.fetch(DBSession(application, Some(dataSource)), sql, maxLine, null)
+      DataBaseHelper.fetchV2(DBSession(application, Some(dataSource)), sql, maxLine, null)
     } else {
-      data = DataBaseHelper.fetch(DBSession(application, Some(dataSource)), sql, maxLine)
+      DataBaseHelper.fetchV2(DBSession(application, Some(dataSource)), sql, maxLine, "null")
     }
-    objectToJson(data getOrElse "null")
   }
 
-  def batchFetch(sqlArr: ScriptObjectMirror, maxLine: Int, timeout: Long): String = {
-    val lst = for (i <- 0 until sqlArr.size()) yield (sqlArr.get(i.toString).toString)
-    val data = DataBaseHelper.batchFetch(useDbSession, lst.toList, maxLine, timeout)
-    val ret = data.map(it => if (it.nonEmpty) it.get else Nil)
-    objectToJson(ret.toArray)
+  def batchFetch(sqlArr: ScriptObjectMirror, maxLine: Int, timeout: Long): ScriptObjectMirror = {
+    val lst = for (i <- 0 until sqlArr.size()) yield sqlArr.get(i.toString).toString
+    DataBaseHelper.batchFetchV2(useDbSession, lst.toList, maxLine, timeout)
   }
 
-  def batchFetchWithDataSource(dataSource: String, sqlArr: ScriptObjectMirror, maxLine: Int, timeout: Long): String = {
-    val lst = for (i <- 0 until sqlArr.size()) yield (sqlArr.get(i.toString).toString)
-    val data = DataBaseHelper.batchFetch(DBSession(application, Some(dataSource)), lst.toList, maxLine, timeout)
-    val ret = data.map(it => if (it.nonEmpty) it.get else Nil)
-    objectToJson(ret.toArray)
+  def batchFetchWithDataSource(dataSource: String, sqlArr: ScriptObjectMirror, maxLine: Int, timeout: Long): ScriptObjectMirror = {
+    val lst = for (i <- 0 until sqlArr.size()) yield sqlArr.get(i.toString).toString
+    DataBaseHelper.batchFetchV2(DBSession(application, Some(dataSource)), lst.toList, maxLine, timeout)
   }
 
-  def fetch_first_cell(sql: String): String = {
-    DataBaseHelper.fetch(useDbSession, sql, 1) match {
-      case Some(dataOrError) => {
-        dataOrError match {
-          case it: DataTable if (it.data.length >= 1) => it.data(0)(0)
-          case _ => null
-        }
-      }
-      case _ => null
+  def fetchFirstCell(sql: String): String = {
+    val result = DataBaseHelper.fetchV2(useDbSession, sql, 1, "null")
+    if (result.hasMember("error")) {
+      return null
     }
+
+    val data = result.getMember("data").asInstanceOf[ScriptObjectMirror]
+    if (data.getMember("length").asInstanceOf[Int] > 0) {
+      val value = data.get("0").asInstanceOf[ScriptObjectMirror].get("0")
+      if (!value.isInstanceOf[Undefined]) value.toString
+    }
+    null
   }
 
   def executeUpdate(appName: String, sql: String, ifErrorInfo: Boolean): Any = {
     DataBaseHelper.executeUpdate(useDbSession, sql) match {
-      case Some(dataOrError) => {
+      case Some(dataOrError) =>
         dataOrError match {
           case num: Int => num
-          case error: DBError if (ifErrorInfo) => objectToJson(error)
+          case error: DBError if ifErrorInfo => objectToJson(error)
           case _ => 0
         }
-      }
       case _ => 0
     }
   }
 
   def batchExecuteUpdate(appName: String, sqlArr: ScriptObjectMirror, ifErrorInfo: Boolean): Any = {
-    val lst = for (i <- 0 until sqlArr.size()) yield (sqlArr.get(i.toString).toString)
+    val lst = for (i <- 0 until sqlArr.size()) yield sqlArr.get(i.toString).toString
     DataBaseHelper.batchExecuteUpdate(useDbSession, lst.toList) match {
-      case Some(dataOrError) => {
+      case Some(dataOrError) =>
         dataOrError.head match {
           case num: Integer => objectToJson(dataOrError.toArray)
           case error: DBError if ifErrorInfo => objectToJson(error)
           case _ => objectToJson(Array.apply())
         }
-      }
       case _ =>
     }
 
   }
 
-  /**
+   /*
     * p2p消息发送
     *
     * @param topic 发送的主题
@@ -308,7 +309,7 @@ class Runtime(engine: ScriptEngine) extends Logger {
   def p2p(topic: String, body: String): Unit = MqHelper.p2p(topic, body)
 
 
-  /**
+   /*
     * MQ的RPC调用
     *
     * @param topic      请求主题名称
@@ -321,7 +322,18 @@ class Runtime(engine: ScriptEngine) extends Logger {
     MqHelper.rpc(application, topic, replyTopic, body, timeout)
   }
 
-  /**
+  def runAsync(callback: ScriptObjectMirror, context: AnyRef): Any = {
+    return AsyncHelper.runAsync(callback, context)
+  }
+  def readAsync(remoteToken: String, deleteAfterRead: Boolean): Any = {
+    return AsyncHelper.readAsync(remoteToken, deleteAfterRead)
+  }
+  def checkStatusAsync(remoteToken: String, deleteAfterCheckStatus: Boolean): Any = {
+    return AsyncHelper.checkStatus(remoteToken, deleteAfterCheckStatus)
+  }
+
+
+  /*
     * 广播消息
     *
     * @param topic 主题名称
@@ -329,7 +341,7 @@ class Runtime(engine: ScriptEngine) extends Logger {
     */
   def broadcast(topic: String, body: String): Unit = MqHelper.broadcast(topic, body)
 
-  /**
+   /*
     * 回复消息
     *
     * @param replyTopic 回复的主题
@@ -337,7 +349,7 @@ class Runtime(engine: ScriptEngine) extends Logger {
     */
   def reply(replyTopic: String, body: String): Unit = MqHelper.reply(application, replyTopic, body)
 
-  /**
+   /*
     * 订阅主题
     *
     * @param topic        主题名
@@ -346,7 +358,7 @@ class Runtime(engine: ScriptEngine) extends Logger {
     */
   def subscribe(topic: String, functionName: String, jsFile: String): Unit = MqHelper.subscribe(application, topic, functionName, jsFile)
 
-  /**
+   /*
     * 取消订阅主题
     *
     * @param topic        主题名
@@ -356,7 +368,7 @@ class Runtime(engine: ScriptEngine) extends Logger {
   def unSubscribe(topic: String, functionName: String, jsFile: String): Unit = MqHelper.unSubscribe(application, topic, functionName, jsFile)
 
 
-  /**
+   /*
     * 通过websocket广播消息
     *
     * @param topic

@@ -26,24 +26,67 @@ var java = {
 
     String: Java.type('java.lang.String'),
     Thread: Java.type('java.lang.Thread'),
+    StringArray: Java.type('java.lang.String[]'),
 
     BigDecimal: Java.type('java.math.BigDecimal'),
-    StringArray: Java.type('java.lang.String[]'),
 
     ResultSet: Java.type('java.sql.ResultSet'),
 
     ArrayList: Java.type('java.util.ArrayList'),
+    HashMap:Java.type('java.util.HashMap'),
 
     StringMap: Java.type('com.google.gson.internal.StringMap'),
 
     ScalaMap: Java.type('scala.collection.immutable.Map'),
 
+    // deprecated, use rdk.xxx to instead.
     FileHelper: Java.type('com.zte.vmax.rdk.jsr.FileHelper'),
     RegFileFilter: Java.type('com.zte.vmax.rdk.util.RegFileFilter'),
     Config: Java.type('com.zte.vmax.rdk.config.Config'),
-
-    HashMap:Java.type('java.util.HashMap')
 };
+
+var rdk = {
+    FileHelper: Java.type('com.zte.vmax.rdk.jsr.FileHelper'),
+    RegFileFilter: Java.type('com.zte.vmax.rdk.util.RegFileFilter'),
+    Config: Java.type('com.zte.vmax.rdk.config.Config'),
+};
+
+var Async = {
+    run: function(callback, context){
+        var remoteToken = rdk_runtime.runAsync(callback, context);
+        Log.info('Async run called and returned with: ' + remoteToken);
+        return remoteToken
+    },
+    read: function(remoteToken, deleteAfterRead){
+        if (!_.isDefined(deleteAfterRead)){
+            deleteAfterRead = true
+        }
+        var result =  rdk_runtime.readAsync(remoteToken, deleteAfterRead)
+        Log.info('Async read called and returned with remoteToken: ' + remoteToken + ', deleteAfterRead: ' + deleteAfterRead);
+        return result
+
+    },
+    checkStatus: function(remoteToken, deleteAfterCheckStatus){
+        if (!_.isDefined(deleteAfterCheckStatus)) {
+            deleteAfterCheckStatus = false
+        }
+        var result = rdk_runtime.checkStatusAsync(remoteToken, deleteAfterCheckStatus)
+        Log.info('Async check status called with parameters :remoteToken ' + remoteToken + ', deleteAfterCheckStatus ' + deleteAfterCheckStatus);
+        return result
+    },
+    append: function(remoteToken, value){
+        var array = Cache.aging.get(remoteToken)
+        if(!array){
+            array = []
+        }
+        var result  = array.push(value)
+        Cache.aging.put(remoteToken, array)
+
+    },
+    clearOutput: function(remoteToken){
+        Cache.aging.del(remoteToken)
+    }
+}
 
 var mq = {
     p2p: function (subject, message) {
@@ -272,6 +315,20 @@ var JVM = {
     }
 }
 
+function groupI18n(keys) {
+    var result = [];
+    each(keys, function (key) {
+        if (_.isString(key)) {
+            result.push(I18n.format(key));
+        } else {
+            //复杂key的情况，待支持
+            warn('complex key is not supported yet!')
+            result.push(key);
+        }
+    });
+    return result;
+}
+
 //国际化
 var I18n = {
     format: function (key) {
@@ -293,9 +350,9 @@ var I18n = {
             return key;
         }
         try {
-            var val = i18n[rdk_runtime.locale()][key];
+            var val = i18n[I18n.locale()][key];
         } catch (e) {
-            warn('get locale data error, locale =', rdk_runtime.locale());
+            warn('get locale data error, locale =', I18n.locale());
             return key;
         }
 
@@ -306,9 +363,9 @@ var I18n = {
         return val;
     },
     locale: function() {
-        return rdk_runtime.locale();
+        return rdk.Config.get("other.locale");
     }
-}
+};
 //兼容以前代码
 var i18n = I18n.format;
 
@@ -827,9 +884,9 @@ var Data = {
 
     // 设置数据源配置
     setDataSource: function (jsonObj) {
-        var json = JSON.stringify(jsonObj)
+        var json = JSON.stringify(jsonObj);
         java.Config.set(json);
-        Log.info("update datasource config!changed:" + json)
+        Log.info("update datasource config!changed:" + json);
         rdk_runtime.reloadDataSource();
     },
 
@@ -852,22 +909,15 @@ var Data = {
         }
     },
     fetchWithDataSource: function (dataSource, sql, maxLine) {
-        return Data._ifFetchWithDataSource(dataSource, sql, maxLine, true);
+        return Data._ifFetchWithDataSource(sql, maxLine, dataSource);
     },
     allowNullToString: function (strict) {
         Cache.put("#_#allowNullToString#_#", !strict);
     },
     fetch: function (sql, maxLine) {
-        return Data._ifFetchWithDataSource(sql, maxLine, null, false);
+        return Data._ifFetchWithDataSource(sql, maxLine);
     },
-    _ifFetchWithDataSource: function (arg1, arg2, arg3, withDataSource) {
-        var dataSource = arg1;
-        var sql = arg2;
-        var maxLine = arg3;
-        if (!withDataSource) {
-            sql = arg1;
-            maxLine = arg2;
-        }
+    _ifFetchWithDataSource: function (sql, maxLine, dataSource) {
         if (!maxLine || !_.isDefined(maxLine)) {
             Log.warn("param maxLine empty,set maxLine=4000");
             maxLine = 4000;
@@ -878,24 +928,27 @@ var Data = {
             return;
         }
 
-        var dataObj = null;
-        if (!withDataSource) {
-            dataObj = JSON.parse(rdk_runtime.fetch(sql, maxLine));
+        var dataTable;
+        if (!!dataSource) {
+            dataTable = rdk_runtime.fetchWithDataSource(dataSource, sql, maxLine);
         } else {
-            dataObj = JSON.parse(rdk_runtime.fetchWithDataSource(dataSource, sql, maxLine))
+            dataTable = rdk_runtime.fetch(sql, maxLine);
         }
-
-        if (!dataObj.hasOwnProperty("error")) {
-            dataObj = new DataTable(i18n(dataObj.fieldNames), dataObj.fieldNames, dataObj.data)
+        if (!dataTable.hasOwnProperty('error')) {
+            // 从java里返回的数组，居然无法通过instanceof的判断了，这里将其强制转为js数组
+            dataTable.header = Data._toRealArray(dataTable.header);
+            dataTable.field = Data._toRealArray(dataTable.field);
+            dataTable.data = Data._toRealArray(dataTable.data);
+            dataTable.header = I18n.format(dataTable.header);
         }
-        return dataObj;
+        return dataTable;
     },
     fetch_first_cell: function (sql) {
         Log.warn("function deprecated,please use Data.fetchFirstCell()");
         return Data.fetchFirstCell(sql);
     },
     fetchFirstCell: function (sql) {
-        return rdk_runtime.fetch_first_cell(sql);
+        return rdk_runtime.fetchFirstCell(sql);
     },
     batchFetch: function (sqlArray, maxLine, timeout) {  //并发实现
         return Data._ifBatchFetchWithDataSource(sqlArray, maxLine, timeout, null, false);
@@ -925,24 +978,26 @@ var Data = {
             Log.warn("param timeout empty,set timeout=30");
             timeout = 30;
         }
-        var dataTableArray = [];
-        var dataObj = null;
+
+        var dataTables = null;
         if (!withDataSource) {
-            dataObj = JSON.parse(rdk_runtime.batchFetch(sqlArray, maxLine, timeout));
+            dataTables = rdk_runtime.batchFetch(sqlArray, maxLine, timeout);
         } else {
-            dataObj = JSON.parse(rdk_runtime.batchFetchWithDataSource(dataSource, sqlArray, maxLine, timeout));
+            dataTables = rdk_runtime.batchFetchWithDataSource(dataSource, sqlArray, maxLine, timeout);
         }
+        dataTables = Data._toRealArray(dataTables);
 
-        for (idx in dataObj) {
-            var res = dataObj[idx];
-            if (res.hasOwnProperty("error")) {
-                dataTableArray.push(res);
-            } else {
-                dataTableArray.push(new DataTable(i18n(res.fieldNames), res.fieldNames, res.data));
+        for (var idx in dataTables) {
+            var dataTable = dataTables[idx];
+            if (!dataTable.hasOwnProperty("error")) {
+                // 从java里返回的数组，居然无法通过instanceof的判断了，这里将其强制转为js数组
+                dataTable.header = Data._toRealArray(dataTable.header);
+                dataTable.field = Data._toRealArray(dataTable.field);
+                dataTable.data = Data._toRealArray(dataTable.data);
+                dataTable.header = I18n.format(dataTable.header);
             }
-
         }
-        return dataTableArray;
+        return dataTables;
 
     },
     batch_fetch: function (sqlArray, maxLine, timeout) {  //并发实现
@@ -975,6 +1030,14 @@ var Data = {
     clear: function(resultSet) {
         info("clearing the resultSet and every resource else.");
         rdk_runtime.dbHelper().clear(rdk_runtime.useDbSession(), resultSet);
+    },
+    _toRealArray: function(array) {
+        // 从java中拿到的数组不是js的数组，需要做转换
+        var a = [];
+        for (var i = array.length - 1; i >= 0; i--) {
+            a[i] = array[i];
+        }
+        return a;
     }
 }
 var sql = Data.sql;
@@ -1007,68 +1070,68 @@ function DataTable(header, field, data, paging) {
             }
         }
         return this;
-    },
+    };
 
-        this.filter = function (func) {
-            if (!_.isFunction(func)) {
-                Log.error("function required!param value:" + func);
-                return this;
-            }
-            var data = [];
-            try {                            //try catch
-                if (func(this.data[row])) {
-                    data.push(this.data[row]);
-                }
-            } catch (error) {
-                Log.warn("function call error");
-            }
+    this.filter = function (func) {
+        if (!_.isFunction(func)) {
+            Log.error("function required!param value:" + func);
             return this;
-        },
-
-        this.select = function (colNameArray) {
-            if (!colNameArray || !_.isArray(colNameArray)) {
-                Log.error("field Array required! field param:" + colNameArray);
-                return this;
-            }
-            var field = [];
-            var header = [];  //delete
-            var data = [];    //转置？
-            var paging = {};
-            var index = 0;
-            for (var i = 0; i < colNameArray.length; i++) {
-                var colName = colNameArray[i];
-                index = this.field.indexOf(colName)
-                if (index == -1) {
-                    Log.warn("field not exist! " + colName);
-                    continue;
-                }
-                field.push(colName);
-                header.push(this.header[index]);
-                for (row = 0; row < this.data.length; row++) {
-                    var rowArray = [];
-                    rowArray.push(this.data[row][index]);
-                    data.push(rowArray);
-                }
-            }
-            this.header = header;
-            this.field = field;
-            this.data = data;
-            this.paging = paging;
-            return this;
-        },
-
-        this.map = function (func) {  //log error
-            Log.error("map funciton is not supported yet!");
-            //if(!_.isFunction(func)){
-            //    Log.error("function required! parm:"+func);
-            //}
-            //each(this.data,func);
-            return this;
-        },
-
-        this.clone = function () {
-            return new DataTable(this.header, this.field, this.data, this.paging);
         }
+        var data = [];
+        try {                            //try catch
+            if (func(this.data[row])) {
+                data.push(this.data[row]);
+            }
+        } catch (error) {
+            Log.warn("function call error");
+        }
+        return this;
+    };
+
+    this.select = function (colNameArray) {
+        if (!colNameArray || !_.isArray(colNameArray)) {
+            Log.error("field Array required! field param:" + colNameArray);
+            return this;
+        }
+        var field = [];
+        var header = [];  //delete
+        var data = [];    //转置？
+        var paging = {};
+        var index = 0;
+        for (var i = 0; i < colNameArray.length; i++) {
+            var colName = colNameArray[i];
+            index = this.field.indexOf(colName);
+            if (index == -1) {
+                Log.warn("field not exist! " + colName);
+                continue;
+            }
+            field.push(colName);
+            header.push(this.header[index]);
+            for (row = 0; row < this.data.length; row++) {
+                var rowArray = [];
+                rowArray.push(this.data[row][index]);
+                data.push(rowArray);
+            }
+        }
+        this.header = header;
+        this.field = field;
+        this.data = data;
+        this.paging = paging;
+        return this;
+    };
+
+    this.map = function (func) {  //log error
+        Log.error("map funciton is not supported yet!");
+        //if(!_.isFunction(func)){
+        //    Log.error("function required! parm:"+func);
+        //}
+        //each(this.data,func);
+        return this;
+    };
+
+    this.clone = function () {
+        return new DataTable(this.header, this.field, this.data, this.paging);
+    };
 }
 
 function json(data, indent) {
@@ -1096,7 +1159,7 @@ function matrix(resultSet, mapIterator, keepResultSet) {
 
     for (var i = 1; i <= cc; i++) {
         var cn = metaData.getColumnLabel(i);
-        mtx.header.push(i18n(cn));
+        mtx.header.push(I18n.format(cn));
         mtx.field.push(cn);
     }
 
@@ -1231,24 +1294,6 @@ function _arg2string(args) {
     }
 }
 
-function i18n(key) {
-
-}
-
-function groupI18n(keys) {
-    var result = [];
-    each(keys, function (key) {
-        if (_.isString(key)) {
-            result.push(i18n(key));
-        } else {
-            //复杂key的情况，待支持
-            warn('complex key is not supported yet!')
-            result.push(key);
-        }
-    });
-    return result;
-}
-
 function _java2json(javaObj) {
     var json = null;
     if (javaObj instanceof java.ArrayList) {
@@ -1283,10 +1328,29 @@ function _java2json(javaObj) {
     return json;
 }
 
+var seviceAuthenticator = load('app/common/sevice-authenticator.js');
+
 //服务调用辅助函数，用来将前端入参转为 json 对象。
 //入参经过java后，就变成了java对象，在js中操作起来不方便
 function _callService(serviceImplement, request, script, headers) {
-    return serviceImplement.call(serviceImplement, _java2json(request), script, headers);
+    request = _java2json(request);
+    var match = script.match(/^app\/.*\/server\/([^\/]*?)\.js$/);
+    if (match && match[1] != 'init') {
+        // 只有app目录下的文件才需要鉴权，并且init.js不需要鉴权
+        seviceAuthenticator.authenticate(request, script, headers);
+    }
+    return serviceImplement.call(serviceImplement, request, script, headers);
 }
 
+function _createJavascriptObject(type) {
+    switch (type) {
+        case 'array':
+            return [];
+        case 'DataTable':
+            return new DataTable([], [], []);
+        case 'object':
+        default:
+            return {};
+    }
+}
 

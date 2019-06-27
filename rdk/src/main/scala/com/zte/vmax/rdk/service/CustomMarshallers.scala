@@ -1,6 +1,6 @@
 package com.zte.vmax.rdk.service
 
-/**
+ /*
  * Created by 10054860 on 2016/11/2.
  */
 
@@ -15,6 +15,7 @@ import spray.routing.RoutingSettings
 import spray.routing.directives.FileAndResourceDirectives
 
 import scala.math._
+
 
 trait CustomMarshallers extends FileAndResourceDirectives {
 

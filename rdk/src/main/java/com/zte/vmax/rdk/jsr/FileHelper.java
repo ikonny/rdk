@@ -16,6 +16,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +28,6 @@ import java.util.regex.Pattern;
 /**
  * Created by 10045812 on 16-5-6.
  */
-@SuppressWarnings(value = {"unchecked", "deprecation"})
 public class FileHelper extends AbstractAppLoggable {
 
     protected void initLogger() {
@@ -123,7 +123,7 @@ public class FileHelper extends AbstractAppLoggable {
             int len;
             fin = new FileInputStream(path);
             while ((len = fin.read(buf)) != -1) {
-                sb.append(new String(buf, 0, len).toString());
+                sb.append(new String(buf, 0, len, Charset.forName("UTF-8")).toString());
             }
 
         } catch (FileNotFoundException e) {
@@ -424,7 +424,7 @@ public class FileHelper extends AbstractAppLoggable {
     public String readExcel(String fileStr, Object option) {
         fileStr = fixPath(fileStr, appName);
         try{
-            ExcelHelper helper = BasicExcelHelper.getRealHelper(fileStr);
+            ExcelHelper helper = BasicExcelHelper.getRealHelper(fileStr, false);
             return helper.readExcel(fileStr);
         }catch (Exception ex){
             logger.error("Read Excel Error", ex);
@@ -447,7 +447,8 @@ public class FileHelper extends AbstractAppLoggable {
             return false;
         }
         try{
-            ExcelHelper helper = BasicExcelHelper.getRealHelper(fileStr);
+            boolean useStreaming = option.get("useStreaming") != null ? (boolean) option.get("useStreaming") : false;
+            ExcelHelper helper = BasicExcelHelper.getRealHelper(fileStr, useStreaming);
             helper.writeExcel(fileStr, content, excludeIndexes, option);
         }catch (Exception ex){
             logger.error("Write Excel Error", ex);

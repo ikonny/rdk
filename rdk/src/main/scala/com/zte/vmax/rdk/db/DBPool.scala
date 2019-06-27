@@ -7,7 +7,7 @@ import com.zte.vmax.rdk.db.Defines.{DatabaseInfo, DbPoolInfo}
 import com.zte.vmax.rdk.loader.{JDBCDriverClassLoader, RdkClassLoader}
 import com.zte.vmax.rdk.util.Logger
 
-/**
+ /*
   * Created by 10054860 on 2016/9/20.
   */
 trait DBPool {

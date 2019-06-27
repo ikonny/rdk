@@ -9,11 +9,10 @@ import spray.routing.RequestContext
 
 import scala.language.existentials
 
-/**
+ /*
   * Created by 10054860 on 2016/7/12.
   * MQ 服务消息定义
   */
-
 object Messages {
 
   trait RDKContext
@@ -22,9 +21,9 @@ object Messages {
 
   case class HttpRequestContext(wrap: RequestContext) extends RDKContext
 
-  case class DBSession(appName: String,opDataSource:Option[String])
+  case class DBSession(appName: String, opDataSource: Option[String])
 
-  case class ServiceParam(service: String=null, param: AnyRef, app: String)
+  case class ServiceParam(service: String = null, param: AnyRef, app: String)
 
   case class ServiceRequest(ctx: RDKContext, script: String,
                             app: String, param: AnyRef, method: String, timeStamp: Long)
@@ -33,9 +32,9 @@ object Messages {
 
   case class ServiceRawResult(content: String, contentType: MediaType, headers: List[HttpHeader])
 
-  case class UploadServiceParam(data: MultipartFormData, fileName: String, timeStamp: Long)
+  case class UploadServiceParam(data: MultipartFormData, timeStamp: Long)
 
-  case class Header(key:String,value:String)
+  case class Header(key: String, value: String)
 
   case class AgingValue(timeStamp: Long, ttl: Long, value: AnyRef, callback: Object)
 
@@ -50,7 +49,7 @@ object Messages {
   //websocket 消息体
   trait WSBody
 
-  /**
+   /*
     * websocket 请求
     *
     * @param head 请求头，回传给客户端
@@ -58,7 +57,7 @@ object Messages {
   class WSRequest(head: WSHead, body: WSBody)
 
 
-  /**
+   /*
     * websocket 调用js脚本方法的消息封装
     *
     * @param script javascript 路径，如app/example/server/alarm.js
@@ -68,34 +67,34 @@ object Messages {
     */
   case class WSCallJSMethodBody(script: String, app: String, param: String, method: String) extends WSBody
 
-  /**
+   /*
     * websocket 调用js脚本方法
     */
   case class WSCallJSMethod(head: WSHead, request: WSCallJSMethodBody) extends WSRequest(head, request)
 
-  /**
+   /*
     *
     * @param topic 订阅的主题
     */
   case class WSSubscribeBody(topic: Array[String]) extends WSBody
 
-  /**
+   /*
     * websocket 订阅消息
     */
   case class WSSubscribe(head: WSHead, subscribe: WSSubscribeBody) extends WSRequest(head, subscribe)
 
-  /**
+   /*
     *
     * @param topic 取消订阅的主题
     */
   case class WSUnSubscribeBody(topic: Array[String]) extends WSBody
 
-  /**
+   /*
     * websocket 取消订阅消息
     */
   case class WSUnSubscribe(head: WSHead, unSubscribe: WSUnSubscribeBody) extends WSRequest(head, unSubscribe)
 
-  /**
+   /*
     * websocket 应答
     *
     * @param head 同WSRequest的head
@@ -103,7 +102,7 @@ object Messages {
     */
   case class WSResponse(head: WSHead, body: ServiceRawResult)
 
-  /**
+   /*
     * websocket 广播消息
     *
     * @param topic   消息主题
@@ -113,7 +112,7 @@ object Messages {
 
   case object GetSequence
 
-  /**
+   /*
     * MQ消息头定义
     *
     * @param reply_topic 期望监听的应答消息（对端回复）
@@ -127,7 +126,7 @@ object Messages {
 
   case class MQ_P2P(subject: String, data: String)
 
-  /**
+   /*
     * RPC调用消息
     *
     * @param subject 主题

@@ -3,7 +3,8 @@ package com.zte.vmax.rdk.util
 
 import java.io.{File, FileOutputStream, FilenameFilter}
 import java.lang.reflect.Method
-import java.net.InetAddress
+import java.net.{InetAddress, URLDecoder}
+import java.nio.charset.Charset
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.UUID
@@ -20,7 +21,7 @@ import com.zte.vmax.rdk.RdkServer
 import com.zte.vmax.rdk.actor.Messages._
 import com.zte.vmax.rdk.cache.CacheHelper
 import com.zte.vmax.rdk.config.Config
-import com.zte.vmax.rdk.defaults.{Misc, RequestMethod}
+import com.zte.vmax.rdk.defaults.{Const, Misc, RequestMethod}
 import com.zte.vmax.rdk.env.Runtime
 import com.zte.vmax.rdk.jsr.FileHelper
 import com.zte.vmax.rdk.service.ServiceConfig
@@ -36,12 +37,12 @@ import akka.pattern.ask
 import spray.http.StatusCodes.{ClientError, ServerError}
 
 
-/**
+ /*
   * Created by 10054860 on 2016/7/15.
   */
 object RdkUtil extends Logger {
 
-  /**
+   /*
     * 获取真实的app名称
     */
   def getRealApp(script: String, app: String): String = {
@@ -64,7 +65,7 @@ object RdkUtil extends Logger {
     }
   }
 
-  /**
+   /*
     * 判断字符串是否为null或空白
     *
     * @param str
@@ -74,7 +75,7 @@ object RdkUtil extends Logger {
     if (str == null || str.isEmpty) true else false
   }
 
-  /**
+   /*
     * 创建ActiveMQ对象
     *
     * @param send true:单纯发送，false：接收订阅类型的对象
@@ -96,7 +97,7 @@ object RdkUtil extends Logger {
   }
 
 
-  /**
+   /*
     * 运行js文件
     *
     * @param runtime
@@ -182,7 +183,7 @@ object RdkUtil extends Logger {
     }
   }
 
-  /**
+   /*
     * 通过json字符串构造MQ_Message对象
     *
     * @param json
@@ -192,7 +193,7 @@ object RdkUtil extends Logger {
     json2Object[MQ_Message](json)
   }
 
-  /**
+   /*
     * 通过json字符串构造对象
     *
     * @param json
@@ -209,7 +210,7 @@ object RdkUtil extends Logger {
     }
   }
 
-  /**
+   /*
     * Object 转成 json 字符串
     *
     * @param obj
@@ -219,26 +220,41 @@ object RdkUtil extends Logger {
     (new GsonBuilder().disableHtmlEscaping().create()).toJson(obj)
   }
 
-  /**
+   /*
     * 生成UUID
     *
     * @return
     */
   def genUUID: String = UUID.randomUUID().toString
 
+   def initExtensionConfig: Unit = {
+     logger.info("*" * 20 + s"rdk init extension config begin..." + "*" * 20)
+     implicit val timeout: Timeout = Timeout(ServiceConfig.initTimeout second)
 
-  /**
+     val request = ServiceRequest(ctx = NoneContext, "proc/conf/init-extension-config.js",
+       app = "common", param = null, method = "run", timeStamp = System.currentTimeMillis())
+     val future = RdkServer.appRouter ? request
+     try {
+       Await.result(future, ServiceConfig.initTimeout second)
+       logger.info("*" * 20 + s"rdk init extension config complete" + "*" * 20)
+     } catch {
+       case ex: java.util.concurrent.TimeoutException => logger.warn("rdk init extension config timeout!" + ex)
+       case x: Exception => logger.warn("unexpected exception while init extension config:" + x)
+     }
+   }
+
+   /*
     * RDK启动时，调用应用的初始化脚本
     */
   def initApplications: Unit = {
-    logger.info("*" * 20 + s"rdk init begin..." + "*" * 20)
+    logger.info("*" * 20 + s"rdk init application begin..." + "*" * 20)
     val initScripts: List[String] = forEachDir(Paths.get("app"))
 
     implicit val ec = RdkServer.system.dispatchers.lookup(Misc.routeDispatcher)
 
     val result = initScripts.map(script => {
-      val scriptFixSepartor = script.replaceAllLiterally("\\", "/")
-      val request = ServiceRequest(ctx = NoneContext, scriptFixSepartor.substring(scriptFixSepartor.indexOf("/app/") + 1),
+      val scriptFixSeparator = script.replaceAllLiterally("\\", "/")
+      val request = ServiceRequest(ctx = NoneContext, scriptFixSeparator.substring(scriptFixSeparator.indexOf("/app/") + 1),
         app = null, param = null, method = "init", timeStamp = System.currentTimeMillis())
       implicit val timeout: Timeout = Timeout(ServiceConfig.initTimeout second)
       Future {
@@ -250,8 +266,8 @@ object RdkUtil extends Logger {
       Await.result(Future.sequence(result), ServiceConfig.initTimeout second)
       logger.info("*" * 20 + s"rdk init complete" + "*" * 20)
     } catch {
-      case ex: java.util.concurrent.TimeoutException => logger.warn("init timeout!" + ex)
-      case x: Exception => logger.warn("unexpected exception:" + x)
+      case ex: java.util.concurrent.TimeoutException => logger.warn("rdk init application timeout!" + ex)
+      case x: Exception => logger.warn("unexpected exception while init application:" + x)
     }
 
   }
@@ -265,7 +281,9 @@ object RdkUtil extends Logger {
             val initJs = dir.toFile.listFiles(new FilenameFilter {
               override def accept(dir: File, name: String): Boolean = name == "init.js"
             })
-            initJs.foreach(it => pathLst = (it.getCanonicalPath) :: pathLst)
+            if(initJs != null){
+              initJs.foreach(it => pathLst = (it.getCanonicalPath) :: pathLst)
+            }
           }
           FileVisitResult.CONTINUE
         }
@@ -273,7 +291,7 @@ object RdkUtil extends Logger {
     pathLst
   }
 
-  /**
+   /*
     * 获取标准sql
     */
   def getVSql(dbSession: DBSession, sql: String): Option[String] = {
@@ -299,7 +317,7 @@ object RdkUtil extends Logger {
   }
 
 
-  /**
+   /*
     * 安全关闭对象
     *
     * @param closeable
@@ -315,7 +333,7 @@ object RdkUtil extends Logger {
     }
   }
 
-  /**
+   /*
     * 判断文件是否存在
     *
     * @param file
@@ -338,22 +356,54 @@ object RdkUtil extends Logger {
       case r: Some[A] => r
       case _ => None
     }
+   
+  def uploadFile(runtime: Runtime, formData: MultipartFormData): Either[Exception, String] = {
+    val dataField = formData.fields.filter(f => {
+      val name = f.name.getOrElse("unknown")
+      name.equalsIgnoreCase("file") || name.equalsIgnoreCase("data")
+    })
+    if (dataField.isEmpty) return Left(new Exception("invalid form data, no file or data field found!"))
 
-  def uploadFile(runtime: Runtime, formData: MultipartFormData, fileName: String): Either[Exception, String] = {
+    val fileField = formData.fields.filter(f => f.name.getOrElse("unknown").equalsIgnoreCase("filename"))
+    val fileName = if (fileField.isEmpty) {
+      // try read filename from data field
+      val header = dataField.head.headers.head.value
+      val pattern = "\\bfilename=\"?.+\"?".r
+      (pattern findFirstIn header).getOrElse("filename=data").replace("\"", "").split("=").tail.apply(0)
+    } else URLDecoder.decode(fileField.head.entity.asString, "utf-8")
+
+    val path = Const.uploadFileDir + UUID.randomUUID().toString + "/"
+    val dataFile = path + fileName
+    val data = dataField.head.entity.data.toByteArray
+    val writeDataResult =  writeBytes(runtime.fileHelper, dataFile, data)
+
+    val metaFile = path + "meta-info.json"
+    val lastModifiedField = formData.fields.filter(f => f.name.getOrElse("unknown").equalsIgnoreCase("lastModified"))
+    val lastModified = if (lastModifiedField.isEmpty) "0" else lastModifiedField.head.entity.asString
+    val writeMetaInfoResult = writeBytes(runtime.fileHelper, metaFile,
+      s"""
+        |{
+        |    "fileName": "$fileName",
+        |    "lastModified": "$lastModified",
+        |    "fileSize": "${data.length}"
+        |}
+      """.stripMargin.trim.getBytes(Charset.defaultCharset()))
+
+    if (writeDataResult.isRight && writeMetaInfoResult.isRight) Right(dataFile) else Left(writeDataResult.left.get)
+  }
+
+  def writeBytes(fileHelper: FileHelper, fileName: String, bytes: Array[Byte]): Either[Exception, Boolean] = {
     val file = new File(fileName)
-    runtime.fileHelper.ensureFileExists(file)
+    fileHelper.ensureFileExists(file)
     val out = new FileOutputStream(file)
-    var result: Either[Exception, String] = Right("upload file success!")
-    formData.fields.foreach {
-      field =>
-        try {
-          out.write(field.entity.data.toByteArray)
-        } catch {
-          case e: Throwable =>
-            result = Left(new Exception(e))
-        } finally {
-          out.close()
-        }
+    var result: Either[Exception, Boolean] = Right(true)
+    try {
+      out.write(bytes)
+    } catch {
+      case e: Throwable =>
+        result = Left(new Exception(e))
+    } finally {
+      out.close()
     }
     result
   }
@@ -442,4 +492,3 @@ object RdkUtil extends Logger {
     }
   }
 }
-

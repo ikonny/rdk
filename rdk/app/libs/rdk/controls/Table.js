@@ -52,11 +52,11 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                 on-finish-render  ng-click="setSelected(item,null)"\
                 ng-class="{\'selected-row\':ifRowHighLight(item,\'click\')}" \
                 ng-dblclick="dbClickHandler(item,$index)">\
-                <td ng-if="addCheckBox"><input type="checkbox" ng-click="singleCheck()" ng-model="item.checked"></td>\
-                <td ng-repeat="columnDef in columnDefs track by $index" \
+                <td ng-if="addCheckBox"><input type="checkbox" ng-click="singleCheck()" ng-disabled="item.disabled" ng-model="item.checked"></td>\
+                <td ng-repeat="columnDef in columnDefs" \
                     ng-show="columnDef.visible" \
                     class="{{columnDef.class}}" \
-                    rdk-column-parser-lite>{{item[columnDef.data]}}</td>\
+                    rdk-column-parser-lite></td>\
             </tr>\
             <tr ng-if="noData">\
                 <td colspan="{{addCheckBox?(visibleColumnDefsCount+1):visibleColumnDefsCount}}">\
@@ -86,7 +86,7 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                                  <tr ng-if="isResize" class="table-first-row"><td ng-if="addCheckBox"></td><td ng-repeat="columnDef in columnDefs track by columnDef.targets" ng-show="columnDef.visible" ng-style="{width:columnDef.width}"></td></tr>\
                                  <tr class="rowTr" on-finish-render  rdk-row-parser ng-click="setSelected(item,$event)"\
                                      ng-class="{\'row-span\':groupTargets,\'selected-row\':ifRowHighLight(item,\'click\'),\'selected-row-hover\':ifRowHighLight(item,\'hover\')}" ng-dblclick="dbClickHandler(item,$index)">\
-                                     <td ng-if="addCheckBox"><input type="checkbox" ng-click="singleCheck()" ng-model="item.checked"></td>\
+                                     <td ng-if="addCheckBox"><input type="checkbox" ng-click="singleCheck()" ng-disabled="item.disabled" ng-model="item.checked"></td>\
                                      <td ng-class="{\'selected-row-td\':ifRowHighLight(item,\'click\',columnDef),\'selected-row-hover-td\':ifRowHighLight(item,\'hover\',columnDef)}" ng-mouseenter="setHovered(item,$event)" rowspan="{{getRowSpan(itemRowSpan,columnDef)}}" ng-repeat="columnDef in columnDefs" rdk-column-parser ng-show="columnDef.visible" class="{{columnDef.class}}" ng-style="getCellStyle(itemRowSpan,columnDef)">\
                                      </td>\
                                  </tr>\
@@ -130,12 +130,12 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                 <span class="disabledRecords spanRecords search-{{searchPosition}}">{{i18n.total}} {{count}} {{i18n.records}}</span>\
                 <ul class="pagination">\
                     <li ng-class="prevPageDisabled()"> \
-                        <a href ng-click="firstPage()" ng-class="{true:\'disabledRecords\', false:\'enabledRecords\'}[currentPage==0]">\
+                        <a href="javascript:void(0)" ng-click="firstPage()" ng-class="{true:\'disabledRecords\', false:\'enabledRecords\'}[currentPage==0]">\
                             {{i18n.first}}\
                         </a>\
                     </li>\
                     <li ng-class="prevPageDisabled()">\
-                        <a href ng-click= "prevPage()" ng-class="{true:\'disabledRecords\', false:\'enabledRecords\'}[currentPage==0]">\
+                        <a href="javascript:void(0)" ng-click= "prevPage()" ng-class="{true:\'disabledRecords\', false:\'enabledRecords\'}[currentPage==0]">\
                             {{i18n.prev}}\
                         </a>\
                     </li>\
@@ -146,12 +146,12 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                         <a href="javascript:void(0)" ng-class="{true:\'regularRecords\', false:\'enabledRecords\'}[n == currentPage]">{{n+1}}</a>\
                     </li>\
                     <li ng-class="nextPageDisabled()"> \
-                        <a href ng-click="nextPage()" ng-class="{true:\'disabledRecords\', false:\'enabledRecords\'}[currentPage==pageCount()]">\
+                        <a href="javascript:void(0)" ng-click="nextPage()" ng-class="{true:\'disabledRecords\', false:\'enabledRecords\'}[currentPage==pageCount()]">\
                              {{i18n.next}}\
                         </a>\
                     </li>\
                     <li ng-class="nextPageDisabled()"> \
-                        <a href ng-click="lastPage()" ng-class="{true:\'disabledRecords\', false:\'enabledRecords\'}[currentPage==pageCount()]">\
+                        <a href="javascript:void(0)" ng-click="lastPage()" ng-class="{true:\'disabledRecords\', false:\'enabledRecords\'}[currentPage==pageCount()]">\
                             {{i18n.last}}\
                         </a>\
                     </li>\
@@ -163,12 +163,12 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                 <span class="disabledRecords spanRecords search-{{searchPosition}}">{{i18n.total}} {{count}} {{i18n.records}}</span>\
                 <ul class="pagination">\
                     <li ng-class="prevPageDisabled()"> \
-                        <a href ng-click="firstPage()" ng-class="{true:\'disabledRecords\', false:\'enabledRecords\'}[currentPage==0]">\
+                        <a href="javascript:void(0)" ng-click="firstPage()" ng-class="{true:\'disabledRecords\', false:\'enabledRecords\'}[currentPage==0]">\
                             <i class="iconfont iconfont-e8e1" aria-hidden="true"></i>\
                         </a>\
                     </li>\
                     <li ng-class="prevPageDisabled()">\
-                        <a href ng-click= "prevPage()" ng-class="{true:\'disabledRecords\', false:\'enabledRecords\'}[currentPage==0]">\
+                        <a href="javascript:void(0)" ng-click= "prevPage()" ng-class="{true:\'disabledRecords\', false:\'enabledRecords\'}[currentPage==0]">\
                             <i class="iconfont iconfont-e8df" aria-hidden="true"></i>\
                         </a>\
                     </li>\
@@ -178,12 +178,12 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                         <i class="regular_right">  /  {{pageCount()+1}}</i></span>\
                     </li>\
                     <li ng-class="nextPageDisabled()"> \
-                        <a href ng-click="nextPage()" ng-class="{true:\'disabledRecords\', false:\'enabledRecords\'}[currentPage==pageCount()]">\
+                        <a href="javascript:void(0)" ng-click="nextPage()" ng-class="{true:\'disabledRecords\', false:\'enabledRecords\'}[currentPage==pageCount()]">\
                              <i class="iconfont iconfont-e8e0" aria-hidden="true"></i>\
                         </a>\
                     </li>\
                     <li ng-class="nextPageDisabled()"> \
-                        <a href ng-click="lastPage()" ng-class="{true:\'disabledRecords\', false:\'enabledRecords\'}[currentPage==pageCount()]">\
+                        <a href="javascript:void(0)" ng-click="lastPage()" ng-class="{true:\'disabledRecords\', false:\'enabledRecords\'}[currentPage==pageCount()]">\
                             <i class="iconfont iconfont-e8e2" aria-hidden="true"></i>\
                         </a>\
                     </li>\
@@ -332,28 +332,22 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
             return {
                 restrict: 'A',
                 link: function(scope, element, attr) {
-                    if (scope.columnDef.render) {
-                        var DUMMY_SCOPE = {$destroy: angular.noop};
-                        var childScope;
-                        var destroyChildScope = function() {
-                            (childScope || DUMMY_SCOPE).$destroy();
-                        };
-                        scope.$watch("item",parseColumn,true);
-
-                        function parseColumn(){
-                            //创建子scope，方便在每次销毁DOM时，也能销毁掉scope，去掉compile带来的watchers
-                            childScope = scope.$new(false);
-                            var html;
-                            if (angular.isFunction(childScope.columnDef.render)) {
-                                html = '<div>' + childScope.columnDef.render.call(undefined, childScope.item) + '</div>';
+                    scope.$watch("columnDef",parseColumn,true);
+                    scope.$watch("item",parseColumn,true);
+                    function parseColumn(){
+                        //创建子scope，方便在每次销毁DOM时，也能销毁掉scope，去掉compile带来的watchers
+                        var html;
+                        if (scope.columnDef.render) {
+                            if (angular.isFunction(scope.columnDef.render)) {
+                                html = '<div>' + scope.columnDef.render.call(undefined, scope.item) + '</div>';
                             } else {
-                                html = '<div>' + childScope.columnDef.render + '</div>';
+                                html = '<div>' + scope.columnDef.render + '</div>';
                             }
-                            element.html(html);
-                            $compile(element.contents())(childScope);
-
-                            scope.$on("$destroy", destroyChildScope);
+                        }else{
+                            html = '<div ng-bind="item[columnDef.data]"></div>';
                         }
+                        element.html(html);
+                        $compile(element.contents())(scope);
                     }
                 }
             }
@@ -362,6 +356,7 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
             return {
                 restrict: 'A',
                 link: function(scope, element, attr) {
+                    scope.$watch("columnDef",parseColumn,true);
                     scope.$watch("item",parseColumn,true);
                     function parseColumn(){
                         var html = '<div style="min-height: 20px" ng-click="editHandler($event, columnDef)" ng-mouseenter="changeShape($event, columnDef)">';
@@ -381,7 +376,7 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                             } else {
                                 html += '<div ng-bind="item[columnDef.data]"> </div>';
                                 html += '<div ng-show="false">' +
-                                    '<input class="editInput" ng-model="item[columnDef.data]"  ng-keyup="inputPressHandler($event, item.$index, columnDef,itemRowSpan,$parent.$index)" ng-blur="editorBlurHandler($event, item.$index, columnDef,itemRowSpan,$parent.$index)">' +
+                                    '<input class="editInput" value="{{item[columnDef.data]}}"  ng-keyup="inputPressHandler($event, item.$index, columnDef,itemRowSpan,$parent.$index)" ng-blur="editorBlurHandler($event, item.$index, columnDef,itemRowSpan,$parent.$index)">' +
                                     '</div>';
                             }
                         } else {
@@ -403,6 +398,7 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
             selectedIndex: '=?',
             pageSize: "@?",
             pagingType: "@?",
+            pagingTimeout: "@?",
             pagingVisible: "@?",
             lang: "@?",
             search:"=?",
@@ -509,6 +505,17 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                     scope.highLightItem(index);
                     scope.scrollTo(index);
                 }
+
+                this.setCurrentSort=function(sortObj){
+                    if(!sortObj || Utils.isEmptyObject(sortObj)){
+                        return
+                    }
+                    scope.sortHandler(sortObj.targetIndex,sortObj.columnDef,sortObj.status)
+                }
+
+                this.fixColumnWidth=function(){
+                    scope.fixedTableHead();
+                };
 
                 function _refreshSingleCheckedData(items){
                     angular.forEach(items, function(item){
@@ -690,6 +697,7 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                                 var param = {
                                     peerParam: config[key],
                                     service: url,
+                                    timeout: scope.pagingTimeout,
                                     paging: {
                                         currentPage: Number(scope.currentPage+1),
                                         pageSize: Number(scope.pageSize)
@@ -857,7 +865,9 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                         scope.$watch("compileHeads", function(newVal, oldVal) {
                             if (newVal != oldVal) {
                                 _restTableHeaders(oldVal);
+                                _restTableHeadersBody(oldVal);
                                 _reSetTableHeaders();
+                                _reSetTableHeadersBody();
                             }
                         }, true);
 
@@ -948,11 +958,19 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                                 $(lastDivTarget).css('display', "inline");
                                 $(lastDivTarget).removeAttr("class");
                                 //$(lastDivTarget.childNodes[0]).val($(lastDivTarget.childNodes[0]).attr("value"));
-                                $(lastDivTarget.childNodes[0]).focus();
+                               // $(lastDivTarget.childNodes[0]).focus();
+                                setFocus(lastDivTarget.childNodes[0],true);
                                 event.currentTarget.parentNode.style.width = tdWidthCache + 'px';
                             }
                         }
-
+                        function setFocus(ele, isFocus) {
+                            if (isFocus) {
+                                ele.focus();
+                                ele.value = ele.value;
+                            } else {
+                                ele.blur();
+                            }
+                        }
                         scope.editorBlurHandler = function(event, row, columnDef, itemRowSpan, filterIndex) {
                             var inputTarget = event.currentTarget;
                             var divTarget = inputTarget.parentNode;
@@ -1000,12 +1018,12 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                             }
                         }
 
-                        scope.sortHandler = function(iCol, columnDef) {
+                        scope.sortHandler = function(iCol, columnDef,sortStatus) {
                             if (!columnDef.sortable) return;
                             if(curSortIndex!==iCol){
                                 sortIconStatus=true;
                             }
-                            sortIconStatus=!sortIconStatus;
+                            sortIconStatus = sortStatus || !sortIconStatus;
                             var table = element[0].querySelector('.sticky-enabled');
                             if (scope.pagingType == "server" || scope.pagingType == "server-auto") {
                                 scope.serverSortCache = true;
@@ -1025,6 +1043,12 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                                 }
                             }
                             curSortIndex=iCol;
+                            var sortInfo={
+                                columnDef:columnDef,
+                                targetIndex:curSortIndex,
+                                status:sortIconStatus
+                            };
+                            EventService.broadcast(attrs.id, EventTypes.SORT_CHANGE,sortInfo);
                         };
                         scope.curSortCol=function(index){
                             return curSortIndex===index;
@@ -1212,6 +1236,7 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                         var isIE =Utils.isIEFlag;
                         var hasHandeLastTh=false;
                         var resizeReady=false;
+                        scope.fixedTableHead=_fixedTableHead;
                         function _fixedTableHead(){
                             if(scope.isResize && resizeReady) return; //resize开启时只需调整一次表头
                             var tHeadThs =  element[0].querySelectorAll("table.rdk-table-head>thead>tr>th");
@@ -1238,23 +1263,25 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                             if(!scope.noHeader){
                                 tBodyTds =  element[0].querySelectorAll("table.rdk-table-body>thead>tr>th");
                                 var tBodyTdsDate =  element[0].querySelectorAll("table.rdk-table-body>tbody>tr:first-child>td");
+                                tableBody.style.tableLayout="auto";
+                                Array.prototype.map.call(tBodyTds, function(obj) {
+                                    $(obj).width("");
+                                });
                                 var colWidths = Array.prototype.map.call(tBodyTds, function(obj) {
                                     return $(obj).width();
                                    // return Utils.getStyle(obj,"width");
                                 });
-                                //TODO:IE列某些场景下表格列无法对齐
-                                if(isIE){
-                                    if(!scope.noData){
-                                        tableBody.style.tableLayout="auto";
-                                        colWidths = Array.prototype.map.call(tBodyTdsDate, function(obj) {
-                                            return $(obj).width();
-                                           // return  Utils.getStyle(obj,"width");
-                                        });
-                                    }
+                                //IE列某些场景下表格表头列和数据列无法对齐
+
+                                if(isIE && !scope.noData){
+                                    colWidths = Array.prototype.map.call(tBodyTdsDate, function(obj) {
+                                        return $(obj).width();
+                                       // return  Utils.getStyle(obj,"width");
+                                    });
                                     Array.prototype.map.call(tBodyTds, function(colObj,index){
                                         $(colObj).width(colWidths[index]);
                                     });
-                                    //表格初始隐藏列宽度获取失败
+                                    //表格初始隐藏,列宽度会获取失败(全为0)
                                     if(parseFloat(colWidths[0]) !=0){
                                         tableBody.style.tableLayout="fixed";
                                     }
@@ -1266,6 +1293,10 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                                        // colObj.style.width=colWidths[index];
                                         $(colObj).width(colWidths[index]);
                                     }
+                                });
+                                //表头表体都设置宽度，应用有动态调节表格宽度的场景
+                                Array.prototype.map.call(tBodyTds, function(colObj,index) {
+                                    $(colObj).width(colWidths[index]);
                                 });
                                 //注意有多级表头
                                 var trHeight;
@@ -1286,7 +1317,7 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                         }
 
                         function scrollLeftHandle(event) {
-                            var target = event.target || event.srcElement;
+                            var target = !!event ? event.target || event.srcElement : tableWrap;
                             tHeadBox.scrollLeft=target.scrollLeft;
                             if(isIE && tHeadBox.scrollLeft!=target.scrollLeft && !hasHandeLastTh && !scope.isResize){
                                 var lastTh = tHeadBox.querySelector("thead>tr>th:last-child");
@@ -1370,8 +1401,8 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
 
                     function _getCheckedItems(){
                         var arr = [];
-                        var filterData = scope.$eval("destData | filter:globalSearch");
-                        angular.forEach(filterData, function(item){
+                        //var filterData = scope.$eval("destData | filter:globalSearch");
+                        angular.forEach(scope.destData, function(item){
                             if(item.checked){
                                 arr.push(item);
                             }
@@ -1497,18 +1528,32 @@ define(['angular', 'jquery', 'underscore', 'jquery-headfix', 'jquery-gesture',
                             }
                         }
                     }
-                    //重置表头自定义的列渲染，删除已渲染好的节点元素
+                    //重置表头自定义的列渲染，删除head已渲染好的节点元素
                     function _restTableHeaders(compileHeads){
-                        var thead = element[0].querySelector('thead');
+                        var thead = element[0].querySelector('table.rdk-table-head>thead');
                         var ths=thead.querySelector("tr:last-child").querySelectorAll("th[ng-repeat]");
                         for(var i= 0,thLen=ths.length;i<thLen;i++) {
                             for (var key in compileHeads) {
-                                if (compileHeads.hasOwnProperty(key) && key == i) {
+                                if (key == i) {
                                     ths[i].querySelector(".rdk-table-custom-header").innerHTML = "";
                                 }
                             }
                         }
                     }
+                    //重置表头自定义的列渲染，删除body已渲染好的节点元素
+                    function _restTableHeadersBody(compileHeads){
+                        var thead = element[0].querySelector('table.rdk-table-body>thead');
+                        var ths=thead.querySelector("tr:last-child").querySelectorAll("th[ng-repeat]");
+                        for(var i= 0,thLen=ths.length;i<thLen;i++) {
+                            for (var key in compileHeads) {
+                                // ie11？？compileHeads.hasOwnProperty(key) 存在为false的情况
+                                if (key == i) {
+                                    ths[i].querySelector(".rdk-table-custom-header").innerHTML = "";
+                                }
+                            }
+                        }
+                    }
+
                     function _reSetTableAddHeaders(tHeadBox,tableHead){
                         if(_hasAddTrReady){
                             return;

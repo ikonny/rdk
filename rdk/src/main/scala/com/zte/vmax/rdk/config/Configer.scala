@@ -11,7 +11,7 @@ trait ConfigTrait extends Logger {
   //get path from envrioment to relative path
   protected var configHome = "./"
 
-  /**
+   /*
     * 设置配置文件，只写文件名即可。
     *
     * 默认从configHome路径去读文件，同时如果resources下有同名文件也会读取   *
@@ -22,11 +22,6 @@ trait ConfigTrait extends Logger {
   def setConfigFiles(files: String*): Unit = {
     logger.debug(s"config home: $configHome")
     config = files.toList.map(load).reduce((a, b) => a.withFallback(b))
-    config = config.withFallback(DefaultConfiger.getConfig).resolve()
-    //注册默认的数据源(gbase)
-    val defaultGbaseDataSource =
-      s"""db.default.url="${DefaultConfiger.getGbaseUrl}" """
-    config = config.withFallback(ConfigFactory.parseString(defaultGbaseDataSource)).resolve()
   }
 
   protected def load(file: String): com.typesafe.config.Config = {
@@ -50,7 +45,7 @@ trait ConfigTrait extends Logger {
   }
 }
 
-/**
+ /*
   * Created by 10054860 on 2016/7/9.
   */
 object Config extends ConfigTrait {
@@ -58,11 +53,7 @@ object Config extends ConfigTrait {
   def setConfig(path: String) = {
     configHome = path
     //前面文件中的配置项优先
-    setConfigFiles(
-      "rdk.cfg",
-      "datasource.cfg",
-      "extension.cfg"
-    )
+    setConfigFiles("rdk.cfg", "datasource.cfg")
   }
 
   def get(key: String, defaultValue: String): String = {

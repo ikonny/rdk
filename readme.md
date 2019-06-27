@@ -2,7 +2,7 @@
 - [http://rdk.zte.com.cn](http://rdk.zte.com.cn)
 
 ## 第一步
-[《天龙八步》](http://rdk.zte.com.cn/doc/#best_practise/index.md)，这是RDK的Hello World。
+[《天龙八步》](http://rdk.zte.com.cn/version/latest/doc/best_practise/index.html)，这是RDK的Hello World。
 
 ## BUG!!!
 > 你提的每个bug都是在帮助rdk改进！
@@ -22,3 +22,4 @@ RDK在GitHub上的工程：<https://github.com/rdkmaster/rdk>。我们也欢迎�
 ## 我要吐槽
 1. 如果未登录的，请用人事在线账号在[这里登录](http://gitlab.zte.com.cn/users/sign_in)
 2. [单击这里，尽情的发泄把骚年](http://gitlab.zte.com.cn/10045812/rdk/issues/new)
+

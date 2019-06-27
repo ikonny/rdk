@@ -5,7 +5,7 @@ import com.zte.vmax.rdk.util.Logger
 
 import scala.util.{Failure, Success, Try}
 
-/**
+ /*
   * Created by 10054860 on 2016/7/28.
   */
 trait MQCreator extends Logger {

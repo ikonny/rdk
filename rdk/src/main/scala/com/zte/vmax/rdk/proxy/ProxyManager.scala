@@ -10,7 +10,7 @@ import com.zte.vmax.rdk.util.{Logger, RdkUtil}
 
 import scala.util.Try
 
-/**
+ /*
   * Created by 10054860 on 2016/8/19.
   */
 object ProxyManager extends Logger {
@@ -44,7 +44,7 @@ object ProxyManager extends Logger {
 
     appLogger.debug(s"Try to get db connection with name '${dsName}'")
     val opConn = DataSource.getDbPool(dsName).flatMap(_.getConnection)
-    if (opConn == None) {
+    if (opConn.isEmpty) {
       appLogger.error(s"Failed to get db connection, please check!")
     }
     opConn

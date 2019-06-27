@@ -6,7 +6,7 @@ import com.zte.vmax.rdk.actor.Messages._
 import com.zte.vmax.rdk.defaults.Misc
 import com.zte.vmax.rdk.util.Logger
 
-/**
+ /*
   * Created by 10054860 on 2016/7/7.
   */
 class MQRouter extends Actor with Logger {

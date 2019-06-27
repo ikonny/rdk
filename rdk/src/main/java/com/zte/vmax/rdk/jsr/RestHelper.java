@@ -10,6 +10,7 @@ import jdk.nashorn.internal.runtime.Undefined;
 import javax.net.ssl.*;
 import java.io.*;
 import java.net.*;
+import java.nio.charset.Charset;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
@@ -22,6 +23,7 @@ import scala.collection.Iterator;
 /**
  * Created by 10045812 on 16-6-27.
  */
+
 public class RestHelper extends AbstractAppLoggable {
     private Iterator<Messages.Header> originHeaderIter;
 
@@ -127,7 +129,6 @@ public class RestHelper extends AbstractAppLoggable {
         }
         return baos.toByteArray();
     }
-
     private String commonRest(String url, String param, Object option, String method, boolean ifErrorInfo) {
         url = fixUrl(url);
         logger.debug("requesting(" + method + ") url=" + url);
@@ -217,13 +218,13 @@ public class RestHelper extends AbstractAppLoggable {
             result = new String(bytes, encoding);
         } catch (UnsupportedEncodingException e) {
             logger.warn("invalid encoding \"" + encoding + "\" using default");
-            result = new String(bytes);
+            result = new String(bytes, Charset.forName("UTF-8"));
         }
         return result;
     }
 
     private void setRequestHeaders(URLConnection conn) {
-        while (this.originHeaderIter.hasNext()) {
+        while (this.originHeaderIter != null && this.originHeaderIter.hasNext()) {
             Messages.Header header = this.originHeaderIter.next();
             conn.setRequestProperty(header.key(), header.value());
         }
